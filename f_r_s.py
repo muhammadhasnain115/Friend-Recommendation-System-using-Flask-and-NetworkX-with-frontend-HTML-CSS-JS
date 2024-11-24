@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-
+import networkx as nx
 app = Flask(__name__)
 CORS(app)
 
@@ -13,7 +13,7 @@ def recommend():
         num_recommendations = int(request.form.get('num_recommendations', 0))
 
         # Create the graph
-        import networkx as nx
+        
         G = nx.Graph()
 
         for edge in edges:
