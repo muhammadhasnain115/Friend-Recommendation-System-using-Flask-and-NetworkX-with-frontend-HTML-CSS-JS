@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import networkx as nx
+from collections import Counter
 app = Flask(__name__)
 CORS(app)
 
@@ -23,7 +24,7 @@ def recommend():
 
         # Recommendation logic
         def recommend_friends(graph, search_node, num_recommendations):
-            from collections import Counter
+            
 
             if search_node not in graph:
                 return []
@@ -31,21 +32,27 @@ def recommend():
             friends = set(graph.neighbors(search_node))
             recommendations = []
             for friend in friends:
-                recommendations.extend(graph.neighbors(friend))
+                recommendations.extend(graph.neighbors(friend)) #all connectwd with neghbour it is possibe to it self
+            # it can update like the node is not a neghbor of search node or in recommendation the search node is not exists
             recommendations = [node for node in recommendations if node not in friends and node != search_node]
 
+            # recommendations = [4, 5, 6, 4, 5, 4]
+            # recommendation_counts = Counter({4: 3, 5: 2, 6: 1})
+            # this lines store this recommendation list like according to their accorance  
             recommendation_counts = Counter(recommendations)
             shortest_paths = {}
-            for rec in set(recommendations):
-                try:
+            for rec in set(recommendations): # rec == recommended node (6, 3)
+                try: #shothest_path stores in diction like (recommended node, total weight)
                     shortest_paths[rec] = nx.shortest_path_length(graph, source=search_node, target=rec)
                 except nx.NetworkXNoPath:
                     continue
-
+            #sort with the priority
             sorted_recommendations = sorted(
                 shortest_paths.items(),
+                #it sort with shortest parh if the path is same then it get the prority of occurence
                 key=lambda x: (x[1], -recommendation_counts[x[0]])
             )
+            #return will give the number of recommendations want
             return [rec for rec, _ in sorted_recommendations[:num_recommendations]]
 
         # Get recommendations for all nodes
