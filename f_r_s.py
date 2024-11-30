@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import networkx as nx
 from collections import Counter
+
 app = Flask(__name__)
 CORS(app)
 
@@ -14,7 +15,6 @@ def recommend():
         num_recommendations = int(request.form.get('num_recommendations', 0))
 
         # Create the graph
-        
         G = nx.Graph()
 
         for edge in edges:
@@ -24,23 +24,28 @@ def recommend():
 
         # Recommendation logic
         def recommend_friends(graph, search_node, num_recommendations):
-            
-
             if search_node not in graph:
                 return []
 
+            # Get direct friends of the search node
             friends = set(graph.neighbors(search_node))
+
+            # Collect potential recommendations
             recommendations = []
             for friend in friends:
-                recommendations.extend(graph.neighbors(friend)) #all connectwd with neghbour it is possibe to it self
-            # it can update like the node is not a neghbor of search node or in recommendation the search node is not exists
-            recommendations = [node for node in recommendations if node not in friends and node != search_node]
+                recommendations.extend(graph.neighbors(friend))
 
-            # recommendations = [4, 5, 6, 4, 5, 4]
-            # recommendation_counts = Counter({4: 3, 5: 2, 6: 1})
-            # this lines store this recommendation list like according to their accorance  
+            # Filter out nodes that are already direct friends or the search node itself
+            recommendations = [
+                node for node in recommendations
+                if node not in friends and node != search_node
+            ]
+
+            # Count occurrences of potential recommendations
+            
             recommendation_counts = Counter(recommendations)
-            shortest_paths = {}
+        # shees's part start
+            shortest_paths = {} #{4 , 2}
             for rec in set(recommendations): # rec == recommended node (6, 3)
                 try: #shothest_path stores in diction like (recommended node, total weight)
                     shortest_paths[rec] = nx.shortest_path_length(graph, source=search_node, target=rec)
@@ -54,6 +59,10 @@ def recommend():
             )
             #return will give the number of recommendations want
             return [rec for rec, _ in sorted_recommendations[:num_recommendations]]
+        #shees's part end
+
+            # Return top recommendations based on frequency
+            # return [rec for rec, _ in recommendation_counts.most_common(num_recommendations)]
 
         # Get recommendations for all nodes
         recommendations = {}
@@ -61,7 +70,7 @@ def recommend():
             recommendations[node] = recommend_friends(G, node, num_recommendations)
 
         return jsonify(recommendations)
-    
+
     except Exception as e:
         # Log the error for debugging
         return jsonify({'error': str(e)}), 500
